@@ -12,7 +12,8 @@
       "imports": {
         "react": "https://esm.sh/react@18",
         "react-dom/client": "https://esm.sh/react-dom@18/client",
-        "react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime"
+        "react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime",
+        "react/jsx-dev-runtime": "https://esm.sh/react@18/jsx-dev-runtime"
       }
     }
     </script>
@@ -24,23 +25,22 @@
         const jsx = await resp.text();
         
         const result = transform(jsx, {
-          presets: ['react'],
-          plugins: []
+          presets: [['react', { runtime: 'automatic' }]],
         });
         
         const blob = new Blob([result.code], { type: 'application/javascript' });
         const url = URL.createObjectURL(blob);
         const mod = await import(url);
         
-        const { createRoot } = await import('https://esm.sh/react-dom@18/client');
-        const React = await import('https://esm.sh/react@18');
+        const { createRoot } = await import('react-dom/client');
+        const { createElement } = await import('react');
         
         const root = createRoot(document.getElementById('root'));
-        root.render(React.createElement(mod.default));
+        root.render(createElement(mod.default));
       }
       
       loadAndRun().catch(e => {
-        document.getElementById('root').textContent = 'Error: ' + e.message;
+        document.getElementById('root').innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif">Error loading app: ' + e.message + '</div>';
         console.error(e);
       });
     </script>
