@@ -728,8 +728,6 @@ export default function App() {
   const [repCtx,setRepCtx]=useState({name:'',items:[]});
   const [scansUsed,setScansUsed]=useState(0);
   const [scanMode,setScanMode]=useState("barcode");
-  const [ocrPreview,setOcrPreview]=useState(null);
-  const fileInputRef=useRef(null);
   const videoRef=useRef(null);
   const barcodeIntervalRef=useRef(null);
   const [barcodeActive,setBarcodeActive]=useState(false);
@@ -745,8 +743,8 @@ export default function App() {
 
 
   const handleScan=()=>{if(!input.trim())return;setResults(matchIngredients(input));setPestRisks(matchPesticideRisks(input));setScanned(true);setScansUsed(s=>s+1);};
-  const handleSample=(s)=>{setInput(s.ingredients);setScanMode("paste");setTimeout(()=>{setResults(matchIngredients(s.ingredients));setPestRisks(matchPesticideRisks(s.ingredients));setScanned(true);setScansUsed(su=>su+1);},100);};
-  const handleReset=()=>{setInput("");setResults(null);setScanned(false);setPestRisks(null);setOcrPreview(null);setBarcodeProduct(null);setBarcodeError("");};
+  const handleSample=(s)=>{setInput(s.ingredients);setTimeout(()=>{setResults(matchIngredients(s.ingredients));setPestRisks(matchPesticideRisks(s.ingredients));setScanned(true);setScansUsed(su=>su+1);},100);};
+  const handleReset=()=>{setInput("");setResults(null);setScanned(false);setPestRisks(null);setBarcodeProduct(null);setBarcodeError("");};
 
   // ── BARCODE FUNCTIONS ──
   const stopBarcodeCamera=()=>{
@@ -802,21 +800,6 @@ export default function App() {
   };
 
   // cleanup camera on unmount or mode change
-  useEffect(()=>{
-    if(scanMode!=="barcode")stopBarcodeCamera();
-    return ()=>stopBarcodeCamera();
-  },[scanMode]);
-
-  const handlePhoto=(e)=>{
-    const file=e.target.files?.[0]; if(!file)return;
-    const reader=new FileReader();
-    reader.onload=(ev)=>{
-      setOcrPreview(ev.target.result);
-      setScanMode("paste");
-    };
-    reader.readAsDataURL(file);
-    if(fileInputRef.current)fileInputRef.current.value="";
-  };
 
   const openFDA=(name,items)=>{setFdaCtx({name,items});setShowFDA(true);};
   const openReps=(name,items)=>{setRepCtx({name,items});setShowReps(true);};
@@ -948,13 +931,6 @@ export default function App() {
                 <h2 style={{fontSize:24,fontWeight:700,color:"#1C1917",margin:"0 0 6px",fontFamily:"var(--heading)",letterSpacing:"-0.02em"}}>Scan. Search. Check.</h2>
                 <p style={{fontSize:14,color:"#57534E",margin:"0 0 16px",fontFamily:"var(--body)"}}>Check any food product for banned substances</p>
 
-                {/* MODE TOGGLE */}
-                <div style={{display:"flex",gap:0,marginBottom:18,background:"#F5F5F4",borderRadius:12,padding:3}}>
-                  {[{id:"barcode",label:"Barcode"},{id:"photo",label:"Photo"},{id:"paste",label:"Type/Paste"}].map(m=>(
-                    <button key={m.id} onClick={()=>setScanMode(m.id)} style={{flex:1,padding:"10px",border:"none",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"var(--body)",transition:"all 0.2s",background:scanMode===m.id?"#fff":"transparent",color:scanMode===m.id?"#1C1917":"#78716C",boxShadow:scanMode===m.id?"0 1px 3px rgba(0,0,0,0.08)":"none"}}>{m.label}</button>
-                  ))}
-                </div>
-
                 {/* BARCODE MODE */}
                 {scanMode==="barcode"&&(
                   <div>
@@ -1013,35 +989,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* PASTE MODE */}
-                {scanMode==="paste"&&(
-                  <>
-                    {ocrPreview&&!scanned&&(
-                      <div style={{marginBottom:14,background:"#fff",border:"1px solid #E7E5E4",borderRadius:14,padding:14,display:"flex",gap:14,alignItems:"flex-start",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
-                        <img src={ocrPreview} style={{width:80,height:80,objectFit:"cover",borderRadius:10,flexShrink:0,border:"1px solid #E7E5E4"}} alt=""/>
-                        <div>
-                          <div style={{fontSize:14,fontWeight:600,color:"#1C1917",fontFamily:"var(--heading)",marginBottom:4}}>Photo uploaded</div>
-                          <div style={{fontSize:14,color:"#57534E",fontFamily:"var(--body)",lineHeight:1.5}}>Auto-read isn't available here. Please type or paste the ingredients you see in the photo below.</div>
-                        </div>
-                      </div>
-                    )}
-                    <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder="Paste ingredients list here..." rows={5} style={{width:"100%",padding:"14px 16px",fontSize:15,resize:"none",lineHeight:1.6,marginBottom:12}}/>
-                    <button className="scan-btn" onClick={handleScan} disabled={!input.trim()}>Scan Ingredients</button>
-                  </>
-                )}
-
-                {/* PHOTO MODE */}
-                {scanMode==="photo"&&(
-                  <div style={{textAlign:"center"}}>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12,padding:"30px 20px",border:"2px dashed #D6D3D1",borderRadius:16,background:"#fff"}}>
-                      <div style={{fontSize:40,marginBottom:4}}>📷</div>
-                      <div style={{fontSize:16,fontWeight:600,color:"#1C1917",fontFamily:"var(--heading)"}}>Upload a photo</div>
-                      <div style={{fontSize:14,color:"#78716C",fontFamily:"var(--body)",marginBottom:8}}>Snap the ingredients label — type what you see below</div>
-                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhoto} style={{fontSize:14,fontFamily:"var(--body)"}}/>
-                    </div>
-                  </div>
-                )}
-
                 {/* SAMPLES */}
                 <div style={{marginTop:28}}>
                   <h3 style={{fontSize:14,fontWeight:600,color:"#78716C",margin:"0 0 12px",fontFamily:"var(--mono)",letterSpacing:1}}>TRY A SAMPLE</h3>
@@ -1070,16 +1017,6 @@ export default function App() {
                         <div style={{fontSize:18,fontWeight:700,color:"#1C1917",fontFamily:"var(--heading)",lineHeight:1.3}}>{barcodeProduct.name}</div>
                         <div style={{fontSize:13,color:"#57534E",fontFamily:"var(--body)",marginTop:6,lineHeight:1.5,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{barcodeProduct.ingredients.substring(0,120)}...</div>
                       </div>
-                    </div>
-                  </div>
-                )}
-                {/* OCR Source Preview */}
-                {ocrPreview&&(
-                  <div style={{display:"flex",gap:12,alignItems:"flex-start",background:"#fff",border:"1px solid #E7E5E4",borderRadius:14,padding:14,marginBottom:20,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
-                    <img src={ocrPreview} style={{width:52,height:52,objectFit:"cover",borderRadius:10,flexShrink:0,border:"1px solid #E7E5E4"}} alt=""/>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:12,fontWeight:600,color:"#78716C",fontFamily:"var(--mono)",letterSpacing:1,marginBottom:4}}>EXTRACTED FROM PHOTO</div>
-                      <div style={{fontSize:14,color:"#57534E",fontFamily:"var(--body)",lineHeight:1.5,maxHeight:40,overflow:"hidden",textOverflow:"ellipsis"}}>{input.substring(0,120)}...</div>
                     </div>
                   </div>
                 )}
